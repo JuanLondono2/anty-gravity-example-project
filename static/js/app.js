@@ -7,6 +7,7 @@ let currentSearchQuery = '';
 // DOM Elements
 const refreshBtn = document.getElementById('refreshBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
 const statusText = document.getElementById('statusText');
 const searchInput = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -30,12 +31,16 @@ const CIRCUMFERENCE = 2 * Math.PI * 14; // 14 is the radius (r) of the circle in
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize theme based on preference
+    initTheme();
+
     // Initial fetch of data
     fetchReleaseNotes(false);
 
     // Event listeners
     refreshBtn.addEventListener('click', () => fetchReleaseNotes(true));
     exportCsvBtn.addEventListener('click', exportToCsv);
+    themeToggleBtn.addEventListener('click', toggleTheme);
     searchInput.addEventListener('input', handleSearch);
     clearSearchBtn.addEventListener('click', clearSearch);
     
@@ -570,4 +575,41 @@ function escapeCsvField(field) {
         return `"${stringField}"`;
     }
     return stringField;
+}
+
+// Theme Management
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const sunIcon = themeToggleBtn.querySelector('.sun-icon');
+    const moonIcon = themeToggleBtn.querySelector('.moon-icon');
+    
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        document.body.classList.remove('dark-theme');
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+    } else {
+        document.body.classList.add('dark-theme');
+        document.body.classList.remove('light-theme');
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+    }
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-theme');
+    document.body.classList.toggle('dark-theme', !isLight);
+    
+    const sunIcon = themeToggleBtn.querySelector('.sun-icon');
+    const moonIcon = themeToggleBtn.querySelector('.moon-icon');
+    
+    if (isLight) {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+        localStorage.setItem('theme', 'light');
+    } else {
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+        localStorage.setItem('theme', 'dark');
+    }
 }
