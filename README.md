@@ -10,8 +10,11 @@ This application splits daily releases into individual categorized updates and p
 
 * **📰 Dynamic Release Timeline:** Groups updates chronologically with visual status nodes.
 * **🏷️ Categorization & Tags:** Parses underlying HTML and segregates updates into color-coded categories (**Feature** (Green), **Announcement** (Violet), **Issue** (Red), **Deprecation** (Orange), and **Other** (Gray)).
+* **🌓 Theme Customization Toggle:** Seamless swap between Dark Mode and Light Mode directly from the header, persisting the preference in browser storage.
 * **🔍 Search and Filters:** Real-time client-side keyword search and filtering by update category.
 * **🔄 Live Sync Refresh:** A refresh action that bypasses the server's cache to pull the latest updates directly from the XML feed.
+* **📋 Copy to Clipboard:** Copy formatted notes directly to your clipboard with interactive "Copied!" button feedback.
+* **📥 CSV Data Export:** Client-side CSV generator that exports the *currently filtered or searched active list* of updates with automatic quote escaping.
 * **🐦 Custom Tweet Composer Simulator:**
   * Displays a pixel-perfect mockup of X's Dark Mode UI.
   * Real-time sync of text inputs.
