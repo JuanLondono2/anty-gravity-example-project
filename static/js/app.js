@@ -6,6 +6,7 @@ let currentSearchQuery = '';
 
 // DOM Elements
 const refreshBtn = document.getElementById('refreshBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
 const statusText = document.getElementById('statusText');
 const searchInput = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listeners
     refreshBtn.addEventListener('click', () => fetchReleaseNotes(true));
+    exportCsvBtn.addEventListener('click', exportToCsv);
     searchInput.addEventListener('input', handleSearch);
     clearSearchBtn.addEventListener('click', clearSearch);
     
@@ -199,11 +201,13 @@ function renderTimeline() {
     if (filtered.length === 0) {
         notesTimeline.style.display = 'none';
         emptyState.style.display = 'flex';
+        exportCsvBtn.style.display = 'none';
         return;
     }
 
     emptyState.style.display = 'none';
     notesTimeline.style.display = 'block';
+    exportCsvBtn.style.display = 'inline-flex';
 
     // 3. Group filtered updates by date
     const grouped = {};
@@ -263,7 +267,14 @@ function renderTimeline() {
                     ${update.html}
                 </div>
                 <div class="share-action">
-                    <button class="btn-share" data-id="${update.id}">
+                    <button class="btn-action btn-copy" data-id="${update.id}">
+                        <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy Text</span>
+                    </button>
+                    <button class="btn-action btn-share" data-id="${update.id}">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                         </svg>
@@ -272,7 +283,10 @@ function renderTimeline() {
                 </div>
             `;
             
-            // Add tweet click listener to share button
+            // Add click listeners to copy & share buttons
+            const copyBtn = cardEl.querySelector('.btn-copy');
+            copyBtn.addEventListener('click', () => copyToClipboard(update, copyBtn));
+            
             const shareBtn = cardEl.querySelector('.btn-share');
             shareBtn.addEventListener('click', () => openTweetModal(update));
             
@@ -477,4 +491,83 @@ function escapeHtml(string) {
         '/': '&#x2F;'
     };
     return string.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
+}
+
+// Copy plain text update card details to clipboard
+async function copyToClipboard(update, buttonEl) {
+    const text = `BigQuery ${update.category} [${update.date}]:\n${update.plainText}\n\nRead more: ${update.link}`;
+    try {
+        await navigator.clipboard.writeText(text);
+        
+        const textSpan = buttonEl.querySelector('span');
+        const iconContainer = buttonEl.querySelector('.copy-icon');
+        
+        // Save original states
+        const originalText = textSpan.textContent;
+        const originalSvgContent = iconContainer.innerHTML;
+        
+        // Update states for visual feedback
+        textSpan.textContent = 'Copied!';
+        buttonEl.style.color = 'var(--color-feature)';
+        iconContainer.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+        
+        setTimeout(() => {
+            textSpan.textContent = originalText;
+            buttonEl.style.color = '';
+            iconContainer.innerHTML = originalSvgContent;
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+}
+
+// Export active filtered list of release notes to CSV
+function exportToCsv() {
+    const filtered = flattenedUpdates.filter(update => {
+        const matchesCategory = currentCategoryFilter === 'all' || update.categoryKey === currentCategoryFilter;
+        const searchTerms = currentSearchQuery.toLowerCase();
+        const matchesSearch = !currentSearchQuery || 
+            update.plainText.toLowerCase().includes(searchTerms) ||
+            update.category.toLowerCase().includes(searchTerms) ||
+            update.date.toLowerCase().includes(searchTerms);
+        return matchesCategory && matchesSearch;
+    });
+    
+    if (filtered.length === 0) return;
+    
+    const headers = ['Date', 'Category', 'Link', 'Description'];
+    const csvRows = [headers.join(',')];
+    
+    filtered.forEach(item => {
+        const row = [
+            escapeCsvField(item.date),
+            escapeCsvField(item.category),
+            escapeCsvField(item.link),
+            escapeCsvField(item.plainText)
+        ];
+        csvRows.push(row.join(','));
+    });
+    
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bigquery_release_notes_${currentCategoryFilter}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Helper: Escape cells containing quotes, commas or newlines to ensure valid RFC 4180 CSV fields
+function escapeCsvField(field) {
+    if (field === null || field === undefined) return '""';
+    let stringField = String(field);
+    stringField = stringField.replace(/"/g, '""');
+    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
+        return `"${stringField}"`;
+    }
+    return stringField;
 }

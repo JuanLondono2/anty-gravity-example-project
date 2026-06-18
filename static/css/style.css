@@ -665,12 +665,13 @@ body {
 .share-action {
     display: flex;
     justify-content: flex-end;
+    gap: 0.75rem;
     margin-top: 0.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding-top: 0.85rem;
 }
 
-.btn-share {
+.btn-action {
     background: none;
     border: none;
     color: var(--text-muted);
@@ -685,7 +686,12 @@ body {
     transition: all var(--transition-normal);
 }
 
-.btn-share:hover {
+.btn-action:hover {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.btn-action.btn-share:hover {
     color: var(--color-twitter);
     background-color: rgba(29, 155, 240, 0.08);
 }
